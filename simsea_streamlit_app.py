@@ -16,24 +16,26 @@ import os
 import io
 import traceback
 
-# --- Conexión Supabase usando la librería oficial ---
+# simsea_test_connection.py
 from supabase import create_client
-from supabase.client import Client
-# --- Variables de conexión desde Secrets ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
+# Coloca tu URL y key de Supabase
+SUPABASE_URL = "https://db.sxscnkdrfspocwqowldg.supabase.co"
+SUPABASE_KEY = "TU_ANON_PUBLIC_KEY_O_SERVICE_ROLE_KEY"
+
+# Crear cliente
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Probar obtener datos de la tabla 'projects'
 try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     response = supabase.table("projects").select("*").limit(1).execute()
-    
     if response.data:
-        st.success("✅ Conexión exitosa a Supabase")
-        st.write("Primer registro de la tabla 'projects':", response.data)
+        print("✅ Conexión exitosa")
+        print("Primer registro:", response.data)
     else:
-        st.warning("⚠️ Conexión correcta, pero la tabla 'projects' está vacía o no existe.")
+        print("⚠️ Conexión correcta, pero la tabla está vacía o no existe.")
 except Exception as e:
-    st.error(f"❌ Error de conexión a Supabase: {e}")
+    print("❌ Error de conexión:", e)
 
 # ---------------------------
 # Config & helpers
@@ -850,6 +852,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

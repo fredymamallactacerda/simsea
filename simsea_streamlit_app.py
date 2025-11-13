@@ -17,23 +17,22 @@ import io
 import traceback
 
 # simsea_test_connection.py
-from supabase import create_client, Client  # CORRECTO
+from supabase import create_client, Client
+import streamlit as st
+import os
 
-# Variables desde Secrets
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-    # Prueba: leer un registro de la tabla "projects"
+    # Probar lectura de tabla "projects"
     response = supabase.table("projects").select("*").limit(1).execute()
-    
     if response.data:
         st.success("✅ Conexión exitosa a Supabase")
-        st.write("Primer registro de la tabla 'projects':", response.data)
+        st.write("Primer registro:", response.data)
     else:
-        st.warning("⚠️ Conexión correcta, pero la tabla 'projects' está vacía o no existe.")
+        st.warning("⚠️ Conexión correcta, tabla vacía o no existe.")
 except Exception as e:
     st.error(f"❌ Error de conexión a Supabase: {e}")
 
@@ -852,6 +851,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

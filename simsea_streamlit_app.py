@@ -107,7 +107,8 @@ conn = psycopg2.connect(
     database=DB_NAME,
     user=DB_USER,
     password=DB_PASS,
-    port=DB_PORT
+    port=DB_PORT,
+    sslmode="require"
 )
 conn.autocommit = False
 cur = conn.cursor()
@@ -829,4 +830,5 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 

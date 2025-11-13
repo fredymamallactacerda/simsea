@@ -97,6 +97,14 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
+# --- Diagnóstico: mostrar credenciales leídas ---
+st.write("🔍 Diagnóstico de conexión a Supabase")
+st.write("DB_HOST:", DB_HOST)
+st.write("DB_NAME:", DB_NAME)
+st.write("DB_USER:", DB_USER)
+st.write("DB_PASS:", "*****" if DB_PASS else "(vacío)")
+st.write("DB_PORT:", DB_PORT)
+
 # Crear motor SQLAlchemy (para pandas.read_sql_query)
 DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(DB_URL)
@@ -830,5 +838,6 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 

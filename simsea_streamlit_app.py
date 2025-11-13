@@ -21,8 +21,8 @@ from supabase import create_client, Client
 import streamlit as st
 import os
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_URL = os.getenv("https://sxscnkdrfspocwqowldg.supabase.co")
+SUPABASE_KEY = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4c2Nua2RyZnNwb2N3cW93bGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwMjQ2ODgsImV4cCI6MjA3ODYwMDY4OH0.f8s0XLehud8xSQpU9SkXQkCgFE6BDAolxbHcK6DD190")
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -851,6 +851,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

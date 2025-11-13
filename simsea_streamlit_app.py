@@ -15,37 +15,27 @@ import re
 import os
 import io
 import traceback
-# --- Conexión Supabase ---
-import psycopg2
-from sqlalchemy import create_engine
-# --- Conexión Supabase ---
-import psycopg2
-from sqlalchemy import create_engine
+
+# --- Conexión Supabase usando la librería oficial ---
+from supabase import create_client, Client
 
 # --- Variables de conexión desde Secrets ---
-DB_HOST = os.environ.get("DB_HOST")
-DB_NAME = os.environ.get("DB_NAME")
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
-DB_PORT = os.environ.get("DB_PORT")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 try:
-    conn = psycopg2.connect(
-        host=DB_HOST,
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS,
-        port=DB_PORT,
-        sslmode="require"
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT tablename FROM pg_tables WHERE schemaname='public';")
-    tables = cur.fetchall()
-    st.write("✅ Conexión exitosa. Tablas en la base de datos:", tables)
-    cur.close()
-    conn.close()
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    
+    # Prueba: listar las tablas de la base de datos
+    response = supabase.table("projects").select("*").limit(1).execute()
+    
+    if response.data is not None:
+        st.success("✅ Conexión exitosa a la base de datos Supabase")
+        st.write("Primer registro de la tabla 'projects' (si existe):", response.data)
+    else:
+        st.warning("⚠️ Conexión correcta, pero la tabla 'projects' está vacía o no existe.")
 except Exception as e:
-    st.write("❌ Error de conexión:", e)
+    st.error(f"❌ Error de conexión a Supabase: {e}")
     
     st.success("Conexión exitosa a la base de datos Supabase ✅")
 except Exception as e:
@@ -866,6 +856,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

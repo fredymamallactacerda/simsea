@@ -614,7 +614,7 @@ with col_upd:
             else:
                 try:
                     # permission: only creator or admin can update
-                    cur.execute("SELECT usuario FROM projects WHERE id=?", (edit_id,))
+                    cur.execute("SELECT usuario FROM projects WHERE id=%s", (edit_id,))
                     rec = cur.fetchone()
                     owner = rec[0] if rec else None
                     if (not is_admin) and (owner != input_usuario):
@@ -834,6 +834,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

@@ -38,6 +38,15 @@ try:
         port=DB_PORT,
         sslmode="require"
     )
+    cur = conn.cursor()
+    cur.execute("SELECT tablename FROM pg_tables WHERE schemaname='public';")
+    tables = cur.fetchall()
+    st.write("✅ Conexión exitosa. Tablas en la base de datos:", tables)
+    cur.close()
+    conn.close()
+except Exception as e:
+    st.write("❌ Error de conexión:", e)
+    
     st.success("Conexión exitosa a la base de datos Supabase ✅")
 except Exception as e:
     st.error(f"No se pudo conectar: {e}")
@@ -857,6 +866,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

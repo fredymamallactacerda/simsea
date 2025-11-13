@@ -8,7 +8,6 @@ SIMSEA - Formulario completo con Guardar / Limpiar / Buscar / Actualizar / Elimi
 """
 
 import streamlit as st
-import sqlite3
 import pandas as pd
 from datetime import datetime, date
 import hashlib
@@ -16,6 +15,9 @@ import re
 import os
 import io
 import traceback
+# --- Conexión Supabase ---
+import psycopg2
+from sqlalchemy import create_engine
 
 # ---------------------------
 # Config & helpers
@@ -88,88 +90,27 @@ ADMIN_PASSWORD = os.getenv("SIMSEA_ADMIN_PASSWORD", "admin")
 if DATA_DIR and not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR, exist_ok=True)
 
-# ---------------------------
-# Connect DB and ensure tables
-# ---------------------------
-conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30, isolation_level=None)
+# --- Conexión a Supabase (PostgreSQL) ---
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
+# Crear motor SQLAlchemy (para pandas.read_sql_query)
+DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+engine = create_engine(DB_URL)
+
+# Conexión principal con psycopg2
+conn = psycopg2.connect(
+    host=DB_HOST,
+    database=DB_NAME,
+    user=DB_USER,
+    password=DB_PASS,
+    port=DB_PORT
+)
+conn.autocommit = False
 cur = conn.cursor()
-
-# Users table (for app registration)
-cur.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password_hash TEXT,
-    created_at TEXT
-)
-""")
-
-# Projects table (big one)
-cur.execute("""
-CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT,
-    usuario TEXT,
-    usuario_password TEXT,
-    nombre_proyecto TEXT,
-    pais_intervencion TEXT,
-    provincia_departamento TEXT,
-    canton_distrito TEXT,
-    pueblo_nacionalidad TEXT,
-    latitud REAL,
-    longitud REAL,
-    beneficiarios_hombres INTEGER,
-    beneficiarios_mujeres INTEGER,
-    beneficiarios_glbti INTEGER,
-    total_beneficiarios INTEGER,
-    fecha_inicio TEXT,
-    fecha_fin TEXT,
-    duracion_dias INTEGER,
-    monto_total REAL,
-    fuente_financiamiento TEXT,
-    entidad_ejecutora TEXT,
-    eje_plan_biorregional TEXT,
-    eje_tematico_plan_biorregional TEXT,
-    estrategia_plan_biorregional TEXT,
-    accion_plan_biorregional TEXT,
-    objetivo_estrategico_pei TEXT,
-    estrategia_pei TEXT,
-    indicador_pb TEXT,
-    unidad_medida_pb TEXT,
-    meta_pb REAL,
-    indicador_pei TEXT,
-    unidad_medida_pei TEXT,
-    meta_pei REAL,
-    indicador_proyecto TEXT,
-    unidad_medida_proyecto TEXT,
-    meta_proyecto REAL,
-    tendencia_indicador TEXT,
-    anio_cumplimiento_meta INTEGER,
-    anio_linea_base INTEGER,
-    valor_linea_base REAL,
-    meta_2021 REAL, meta_2022 REAL, meta_2023 REAL, meta_2024 REAL, meta_2025 REAL,
-    meta_2026 REAL, meta_2027 REAL, meta_2028 REAL, meta_2029 REAL, meta_2030 REAL,
-    total_meta_cumplida_acumulada REAL,
-    porc_ejecucion_fisica REAL,
-    presupuesto_programado_total REAL,
-    presupuesto_devengado_total REAL,
-    porc_ejecucion_presupuestaria REAL,
-    meta_plan_1 REAL, meta_cum_1 REAL, pres_prog_1 REAL, pres_dev_1 REAL,
-    meta_plan_2 REAL, meta_cum_2 REAL, pres_prog_2 REAL, pres_dev_2 REAL,
-    meta_plan_3 REAL, meta_cum_3 REAL, pres_prog_3 REAL, pres_dev_3 REAL,
-    meta_plan_4 REAL, meta_cum_4 REAL, pres_prog_4 REAL, pres_dev_4 REAL,
-    meta_plan_anual REAL, meta_cum_anual REAL, pct_ejec_fis_anual REAL, pres_prog_anual REAL, pres_dev_anual REAL, pct_pres_anual REAL,
-    nudos_criticos TEXT,
-    logros_relevantes TEXT,
-    aprendizajes TEXT,
-    medios_de_verificacion TEXT,
-    nombre_responsable TEXT,
-    cargo_responsable TEXT,
-    correo_responsable TEXT,
-    telefono_responsable TEXT
-)
-""")
-conn.commit()
 
 # ---------------------------
 # Keys / defaults (session_state)
@@ -308,7 +249,7 @@ else:
                             (new_user.strip(), hash_password(new_pwd), datetime.utcnow().isoformat()))
                 conn.commit()
                 st.sidebar.success("Usuario registrado correctamente. Ahora puede iniciar sesión.")
-            except sqlite3.IntegrityError:
+            except psycopg2.IntegrityError:
                 st.sidebar.error("El usuario ya existe. Elija otro nombre.")
             except Exception as e:
                 st.sidebar.error(f"Error registro: {e}")
@@ -553,7 +494,7 @@ with col_save:
             try:
                 row = build_row_from_inputs(input_usuario)
                 cols = ','.join(row.keys())
-                placeholders = ','.join('?' for _ in row)
+                placeholders = ','.join('%s' for _ in row)
                 cur.execute(f"INSERT INTO projects ({cols}) VALUES ({placeholders})", tuple(row.values()))
                 conn.commit()
                 st.success("✅ Proyecto guardado correctamente.")
@@ -590,7 +531,7 @@ with col_search:
         if search_id_val <= 0:
             st.error("Ingrese un ID válido mayor a 0 para buscar.")
         else:
-            cur.execute("SELECT * FROM projects WHERE id = ?", (search_id_val,))
+            cur.execute("SELECT * FROM projects WHERE id = %s", (search_id_val,))
             rec = cur.fetchone()
             if not rec:
                 st.error("Registro no encontrado.")
@@ -735,9 +676,9 @@ with col_upd:
                             row[f"meta_cum_{t}"] = float(st.session_state.get(P + f"meta_cum_{t}", 0.0) or 0.0)
                             row[f"pres_prog_{t}"] = float(st.session_state.get(P + f"pres_prog_{t}", 0.0) or 0.0)
                             row[f"pres_dev_{t}"] = float(st.session_state.get(P + f"pres_dev_{t}", 0.0) or 0.0)
-                        assignments = ','.join([f"{k}=?" for k in row.keys()])
+                        assignments = ','.join([f"{k}=%s" for k in row.keys()])
                         values = tuple(row.values()) + (edit_id,)
-                        cur.execute(f"UPDATE projects SET {assignments} WHERE id=?", values)
+                        cur.execute(f"UPDATE projects SET {assignments} WHERE id=%s", values)
                         conn.commit()
                         st.success(f"✅ Registro ID {edit_id} actualizado correctamente.")
                         st.session_state[P + "__do_reset__"] = True
@@ -759,7 +700,7 @@ with col_del:
     if st.session_state.get(P + "pending_delete_id"):
         st.markdown("**Confirmar eliminación**")
         pdid = st.session_state[P + "pending_delete_id"]
-        cur.execute("SELECT id, nombre_proyecto, usuario FROM projects WHERE id=?", (pdid,))
+        cur.execute("SELECT id, nombre_proyecto, usuario FROM projects WHERE id=%s", (pdid,))
         rec = cur.fetchone()
         if rec:
             st.write(f"ID: {rec[0]} — Proyecto: **{rec[1]}** — Usuario creador: **{rec[2]}**")
@@ -777,7 +718,7 @@ with col_del:
                         if (not is_admin) and (owner != input_usuario):
                             st.error("No tienes permiso para eliminar (solo el creador o admin).")
                         else:
-                            cur.execute("DELETE FROM projects WHERE id=?", (pdid,))
+                            cur.execute("DELETE FROM projects WHERE id=%s", (pdid,))
                             conn.commit()
                             st.success(f"Registro ID {pdid} eliminado correctamente.")
                             st.session_state[P + "__do_reset__"] = True
@@ -850,7 +791,7 @@ else:
             sel_id = int(choice.split()[1])
             st.session_state[P + "search_id"] = sel_id
             # trigger a fetch similar to Buscar
-            cur.execute("SELECT * FROM projects WHERE id = ?", (sel_id,))
+            cur.execute("SELECT * FROM projects WHERE id = %s", (sel_id,))
             rec = cur.fetchone()
             if rec:
                 cols = [d[0] for d in cur.description]
@@ -888,3 +829,4 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+

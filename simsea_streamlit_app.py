@@ -18,6 +18,29 @@ import traceback
 # --- Conexión Supabase ---
 import psycopg2
 from sqlalchemy import create_engine
+# --- Conexión Supabase ---
+import psycopg2
+from sqlalchemy import create_engine
+
+# --- Variables de conexión desde Secrets ---
+DB_HOST = os.environ.get("DB_HOST")
+DB_NAME = os.environ.get("DB_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASS = os.environ.get("DB_PASS")
+DB_PORT = os.environ.get("DB_PORT")
+
+try:
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS,
+        port=DB_PORT,
+        sslmode="require"
+    )
+    st.success("Conexión exitosa a la base de datos Supabase ✅")
+except Exception as e:
+    st.error(f"No se pudo conectar: {e}")
 
 # ---------------------------
 # Config & helpers
@@ -834,6 +857,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

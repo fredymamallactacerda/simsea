@@ -17,7 +17,8 @@ import io
 import traceback
 
 # --- Conexión Supabase usando la librería oficial ---
-from supabase import create_client, Client
+from supabase import create_client
+from supabase.client import Client
 # --- Variables de conexión desde Secrets ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
@@ -849,6 +850,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 

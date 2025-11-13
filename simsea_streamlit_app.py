@@ -231,7 +231,7 @@ if login_sel == "Entrar":
         if not username_input or not password_input:
             st.sidebar.error("Ingrese usuario y contraseña.")
         else:
-            cur.execute("SELECT password_hash FROM users WHERE username=?", (username_input.strip(),))
+            cur.execute("SELECT password_hash FROM users WHERE username=%s", (username_input.strip(),))
             r = cur.fetchone()
             if r:
                 stored = r[0]
@@ -254,7 +254,7 @@ else:
             st.sidebar.error("Las contraseñas no coinciden.")
         else:
             try:
-                cur.execute("INSERT INTO users (username, password_hash, created_at) VALUES (?,?,?)",
+                cur.execute("INSERT INTO users (username, password_hash, created_at) VALUES (%s,%s,%s)",
                             (new_user.strip(), hash_password(new_pwd), datetime.utcnow().isoformat()))
                 conn.commit()
                 st.sidebar.success("Usuario registrado correctamente. Ahora puede iniciar sesión.")
@@ -515,14 +515,10 @@ with col_save:
 
 # --- Definir la función de limpieza ANTES del botón ---
 def limpiar_todo():
-    # Limpiar valores del formulario
     for k in SHORT_KEYS:
         st.session_state[P + k] = DEFAULTS[k]
-    # Limpiar usuario activo
     st.session_state[P + "sidebar_usuario"] = ""
-    # Reset interno si lo usas
     st.session_state[P + "__do_reset__"] = False
-    st.success("Formulario y sesión limpiados.")
     # Forzar recarga segura
     safe_rerun()
 
@@ -838,6 +834,7 @@ else:
 
 st.markdown("---")
 st.caption("Consejo: configure SIMSEA_ADMIN_USER y SIMSEA_ADMIN_PASSWORD como variables de entorno en producción y haga backups regulares de SIMSEA.db")
+
 
 
 
